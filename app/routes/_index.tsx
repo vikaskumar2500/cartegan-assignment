@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   data.sessionError = session.get("error");
   const userId = session.get("userId") as string;
 
-  // userId is not present
+  // If userId is not present
   if (!useId) {
     return redirect("/signup", {
       headers: {
@@ -69,6 +69,6 @@ export default function Index() {
         <span>{loaderData?.data?.email}</span>
         {loaderData.error && <div>{loaderData.error}</div>}
       </div>
-    </div>
+    </div> 
   );
 }

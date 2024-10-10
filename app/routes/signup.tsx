@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node"; // or cloudflare/deno
-import { json, redirect } from "@remix-run/node"; // or cloudflare/deno
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node"; 
+import { json, redirect } from "@remix-run/node"; 
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { getSession, commitSession } from "../sessions";
 import db from "~/db";
@@ -10,11 +10,12 @@ import bcrypt from "bcryptjs";
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
 
+  // session is present
   if (session.has("userId")) return redirect("/");
 
   const data = { error: session.get("error") };
 
-  console.log("session", session.has("userId"));
+  // console.log("session", session.has("userId"));
   return json(data, {
     headers: {
       "Set-Cookie": await commitSession(session),
@@ -30,14 +31,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const password = formData.get("password")?.toString().trim() || "";
   const name = formData.get("name")?.toString().trim() || "";
 
-  // Initialize an errors object with optional properties
   const errors= {} as { email: string; password: string; name: string };
 
-  // Validation
+  // Form Validation
   if (name.length < 1) errors.name = "Name is required";
   if (!email.includes("@")) errors.email = "Invalid email address";
   if (password.length < 6)
-    errors.password = "Password should be at least 6 characters";
+    errors.password = "Short password";
 
   if (Object.keys(errors).length > 0) {
     return json({ errors });
@@ -53,14 +53,14 @@ export async function action({ request }: ActionFunctionArgs) {
       .execute();
 
     if (existingUser.length > 0) {
-      errors.email = "User with this email already exists";
+      errors.email = "User already exists";
       return json({ errors }, { status: 400 });
     }
 
-    // Hash the password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert the new user into the database
+    // Inserting new user to DB
     const insertedUsers = await db
       .insert(users)
       .values({ name, email, password: hashedPassword })
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const newUser = insertedUsers[0];
 
-    // Set the user ID in the session
+    // set userId 
     session.set("userId", newUser.id.toString());
 
     // Commit the session and redirect to the homepage
@@ -79,7 +79,6 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   } catch (error) {
     console.error("Error during user signup:", error);
-    // Optionally, set a generic error message
     return json(
       { errors: { general: "Something went wrong. Please try again." } },
       { status: 500 }
@@ -90,6 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Signup() {
   const loaderData = useLoaderData<typeof loader>();
   const actionData:any = useActionData<typeof action>();
+  console.log(loaderData);
 
   return (
     <section className="flex h-screen w-full border-4">
